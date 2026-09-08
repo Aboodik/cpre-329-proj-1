@@ -5,6 +5,7 @@ import {
   POST_HOTEL_SUCCESS,
   NEW_GET_HOTELS_SUCCESS,
   DELETE_HOTEL,
+  UPDATE_HOTEL,
 } from "./actionType";
 
 const initialState = {
@@ -37,6 +38,14 @@ export const HotelReducer = (state = initialState, { type, payload }) => {
     case DELETE_HOTEL: {
       const filterFlight = state.data.filter((ele) => ele.id !== payload);
       return { ...state, data: filterFlight };
+    }
+
+    // New case backing the Edit flow (see updateHotel in action.js).
+    case UPDATE_HOTEL: {
+      const updatedHotels = state.data.map((ele) =>
+        ele.id === payload.id ? { ...ele, ...payload.payload } : ele
+      );
+      return { ...state, data: updatedHotels };
     }
 
     default:

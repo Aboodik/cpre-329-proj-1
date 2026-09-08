@@ -2,8 +2,8 @@ import "./Admin.Module.css";
 import React, { useState } from "react";
 
 import { useDispatch } from "react-redux";
-import { addFlight } from "../../Redux/AdminFlights/action";
-import { Link } from "react-router-dom";
+import { addFlight, updateFlight } from "../../Redux/AdminFlights/action";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 
 let initialState = {
   airline: "",
@@ -16,7 +16,13 @@ let initialState = {
   totalTime: "",
 };
 export const Admin = () => {
-  const [flight, setFlight] = useState(initialState);
+  // Doubles as the "Edit" form: AdminProducts navigates here with
+  // { editData } when its Edit button is clicked (that button previously
+  // had no onClick handler at all, and there was no update/PATCH action).
+  const location = useLocation();
+  const navigate = useNavigate();
+  const editData = location.state?.editData;
+  const [flight, setFlight] = useState(editData || initialState);
   const dispatch = useDispatch();
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -27,25 +33,31 @@ export const Admin = () => {
   };
   const handleSubmit = (e) => {
     e.preventDefault();
-    // console.log(flight);
-    dispatch(addFlight(flight));
-    setFlight(initialState);
+    if (editData) {
+      dispatch(updateFlight(editData.id, flight));
+      navigate("/admin/products");
+    } else {
+      dispatch(addFlight(flight));
+      setFlight(initialState);
+    }
   };
   return (
     <>
       <div className="adminFlightMai">
         <div className="adminSideBr">
-        <h1><Link to={"/admin"}>Home</Link></h1>
+        <h1><Link to={"/admin"}>Dashboard</Link></h1>
           <h1><Link to={"/admin/adminflight"}>Add Flight</Link></h1>
           <h1><Link to={"/admin/adminstay"}>Add Stays</Link></h1>
           <h1><Link to={"/admin/products"}>All Flights</Link></h1>
           <h1><Link to={"/admin/hotels"}>All Hotels</Link></h1>
+          <h1><Link to={"/admin/users"}>All Users</Link></h1>
+          <h1><Link to={"/admin/bookings"}>Bookings</Link></h1>
           <h1><Link to={"/"}>Log out</Link></h1>
 
         </div>
         <div className="adminFlightBox">
           <div className="adminHead">
-            <h2>Admin Panel for Flights</h2>
+            <h2>{editData ? "Edit Flight" : "Admin Panel for Flights"}</h2>
           </div>
 
           <div className="adminFlightInputs">
@@ -136,7 +148,7 @@ export const Admin = () => {
               </div>
               <div className="adminFlightInputBx">
                 <span></span>
-                <button>Add Flight Info</button>
+                <button>{editData ? "Save Changes" : "Add Flight Info"}</button>
               </div>
             </form>
           </div>

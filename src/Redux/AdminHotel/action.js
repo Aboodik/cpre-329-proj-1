@@ -6,6 +6,7 @@ import {
   POST_HOTEL_SUCCESS,
   NEW_GET_HOTELS_SUCCESS,
   DELETE_HOTEL,
+  UPDATE_HOTEL,
 } from "./actionType";
 
 export const getHotelSuccess = (payload) => {
@@ -48,15 +49,38 @@ export const addHotel = (payload) => (dispatch) => {
     });
 };
 
+// Was `?_limit=${limit}` with no `_page` — this json-server version returns
+// an empty array whenever _limit is used without _page, so the admin
+// hotel list was always empty. Fetching the full list and slicing
+// client-side sidesteps that.
 export const fetchingHotels = (limit) => (dispatch) => {
   axios
-    .get(`http://localhost:8080/hotel?_limit=${limit}`) // https://makemytrip-api-data.onrender.com/hotel?_limit=${limit}
+    .get(`http://localhost:8080/hotel`)
     .then((res) => {
-      //   console.log(res.data);
-      dispatch(fetch_hotel(res.data));
+      const hotels = Array.isArray(res.data) ? res.data : res.data.data || [];
+      dispatch(fetch_hotel(hotels.slice(0, limit)));
     })
     .catch((err) => {
       console.log(err);
+    });
+};
+
+export const updateHotelSuccess = (payload) => {
+  return { type: UPDATE_HOTEL, payload };
+};
+
+// Added for the Edit flow — there was previously no update/PATCH action
+// for hotels at all, so the Edit button had nothing to call into.
+export const updateHotel = (id, payload) => (dispatch) => {
+  dispatch(hotelRequest());
+
+  axios
+    .put(`http://localhost:8080/hotel/${id}`, payload)
+    .then(() => {
+      dispatch(updateHotelSuccess({ id, payload }));
+    })
+    .catch((err) => {
+      dispatch(hotelFailure());
     });
 };
 

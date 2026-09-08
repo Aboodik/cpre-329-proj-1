@@ -21,10 +21,6 @@ export default function Flights() {
     setPassengerData({ ...PassengerData, [e.target.name]: e.target.value });
   };
 
-  const handleClick = () => {
-    console.log(PassengerData);
-    setPassengerData(initialState);
-  };
 const swapValuehandler = () => {
     setPassengerData({
       ...PassengerData,
@@ -121,16 +117,25 @@ const swapValuehandler = () => {
             </div>
           </div>
           <div className="homeSearchButtonBx">
+          {/* The old onClick reset the from/to fields to empty right as
+              you clicked Search, and the Link never carried the search
+              criteria anywhere — the results page had no way to know what
+              you searched for. Now it's passed as a query string that
+              FlightList reads. */}
           <Button
             colorScheme="blue"
             size="lg"
             className={styles["SearchBtn1"]}
             style={{margin:"auto",}}
-            onClick={handleClick}
-            
           >
-            <Link to={{ pathname: '/flight' }}>Search</Link>
-          
+            <Link
+              to={{
+                pathname: "/flight",
+                search: `?from=${PassengerData.from}&to=${PassengerData.to}`,
+              }}
+            >
+              Search
+            </Link>
           </Button >
             {/* <button >Search</button> */}
           </div>

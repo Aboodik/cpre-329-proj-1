@@ -6,6 +6,8 @@ import { Route, Routes } from "react-router-dom";
 import { AdminDashboard } from "./Admin/AdminDashboard";
 import { AdminProducts } from "./Admin/AdminProducts";
 import { AllHotels } from "./Admin/AllHotels";
+import { AdminUsers } from "./Admin/AdminUsers";
+import { AdminBookings } from "./Admin/AdminBookings";
 import { Destination } from "./ThingsTodo/Destination";
 import HomePage from "./HomePage";
 import { Login } from "./Login";
@@ -13,6 +15,7 @@ import { Register } from "./Register";
 import StayData from "./Stay/StayData";
 import CheckoutPage from "./CheckoutPage";
 import FlightData from "./Flights/FlightData";
+import Cart from "./Cart";
 
 export const AllRoutes = () => {
     return (
@@ -26,10 +29,15 @@ export const AllRoutes = () => {
             <Route path="/login" element={<Login/>}/>
             <Route path="/register" element={<Register/>}/>
             <Route path="/admin/hotels" element={<AllHotels />} />
+            {/* New routes: admin user list + booking history, and the
+                user-facing cart — none of these pages existed before. */}
+            <Route path="/admin/users" element={<AdminUsers />} />
+            <Route path="/admin/bookings" element={<AdminBookings />} />
             <Route path="/ThingsToDo" element={<Destination/>}/>
             <Route path="/stay" element={<StayData />} />
             <Route path="/flight" element={<FlightData />} />
-            
+            <Route path="/cart" element={<Cart />} />
+
             <Route path="/checkout" element={<CheckoutPage/>} ></Route>
           </Routes>
         </>

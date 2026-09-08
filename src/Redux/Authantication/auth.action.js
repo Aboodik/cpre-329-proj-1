@@ -71,8 +71,11 @@ export const fetch_users = (dispatch) => {
 
 export const login_user = (loginData) => (dispatch) => {
   dispatch(login_success(loginData));
-  // localStorage.setItem("MkuserData", JSON.stringify(loginData));
-  // localStorage.setItem("MkisAuth", JSON.stringify(true));
+  // These two lines were commented out — the reducer's initial state reads
+  // from this exact localStorage key on load, so without writing it here a
+  // successful login never survived a page refresh.
+  localStorage.setItem("MkuserData", JSON.stringify(loginData));
+  localStorage.setItem("MkisAuth", JSON.stringify(true));
 };
 
 export const logout_user = (dispatch) => {

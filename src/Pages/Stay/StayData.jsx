@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { DeleteHotel, fetchingHotels } from "../../Redux/StayReducer/action";
+import axios from "axios";
+import { useToast } from "@chakra-ui/react";
+import { fetchingHotels } from "../../Redux/StayReducer/action";
 import "./StayData.css";
 import PriceFilter from "./PriceFilter";
 import Sidebar from "./Sidebar";
@@ -8,33 +10,45 @@ import Pagination from "./Pagination";
 
 const StayData = () => {
   const dispatch = useDispatch();
+  const toast = useToast();
   const { data } = useSelector((store) => store.StayReducer);
-  const checkInDate = useSelector((state) => state.StayReducer.checkInDate);
-  const checkOutDate = useSelector((state) => state.StayReducer.checkOutDate);
-  const selectedCity = useSelector((state) => state.StayReducer.selectedCity);
-  console.log("city",selectedCity);
-  console.log("In", checkInDate);
-  console.log("out", checkOutDate);
   const [selectedPriceRange, setSelectedPriceRange] = useState([0, 10000]);
   const [filteredHotel, setFilteredHotel] = useState([]);
-  const [price, setPrice] = useState(""); // Define price state variable
 
   //Pagination
   const [currentPage, setCurrentPage] = useState(1);
-  const totalNumOfPages = Math.ceil(244 / 20); 
+  const totalNumOfPages = Math.ceil(244 / 20);
 
 
   const handlePageChange = (pageNumber) => {
     setCurrentPage(pageNumber);
   };
 
-  const handleLeft = (id) => {
-    dispatch(DeleteHotel(id));
+  // This button used to be labeled "We have 5 left" and actually deleted
+  // the hotel from the list (dispatch(DeleteHotel)) — there was no booking
+  // action at all, just a mislabeled delete.
+  const handleBookHotel = (hotel) => {
+    axios
+      .post("http://localhost:8080/hotelcart", hotel)
+      .then(() => {
+        toast({
+          title: "Hotel Added to Cart",
+          description: "Please Proceed to Payment",
+          status: "success",
+          duration: 5000,
+          isClosable: true,
+        });
+      })
+      .catch((err) => {
+        console.log(err);
+        toast({
+          title: "Could not add hotel to cart",
+          status: "error",
+          duration: 5000,
+          isClosable: true,
+        });
+      });
   };
-
-  // useEffect(() => {
-  //   dispatch(fetchingHotels("","",""));
-  // }, [dispatch]);
 
   useEffect(() => {
     if (data) {
@@ -45,11 +59,8 @@ const StayData = () => {
             hotel.price <= selectedPriceRange[1]
         )
       );
-      console.log(filteredHotel);
     }
   }, [data, selectedPriceRange]);
-
-console.log(data)
   return (
     <div className="stay-data">
       
@@ -66,12 +77,14 @@ console.log(data)
               <h3 className="stay-name">{hotel.name}</h3>
               <button
                 className="stay-left-btn"
-                onClick={() => handleLeft(hotel.id)}
+                onClick={() => handleBookHotel(hotel)}
               >
-                We have 5 left
+                Book Now
               </button>
             </div>
-            <p className="stay-location">{hotel.location}</p>
+            {/* Was hotel.location — that field doesn't exist on hotel
+                records (it's "place"), so this always rendered blank. */}
+            <p className="stay-location">{hotel.place}</p>
             <p className="stay-description">{hotel.description}</p>
             <div className="stay-details">
               <div className="stay-price">

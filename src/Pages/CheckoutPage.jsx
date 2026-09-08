@@ -1,5 +1,8 @@
 import React from 'react'
-import { Box, Button, HStack, Heading, Icon, Image, Input, SimpleGrid, Text } from '@chakra-ui/react'
+import axios from 'axios'
+import { useNavigate } from 'react-router-dom'
+import { useSelector } from 'react-redux'
+import { Box, Button, HStack, Heading, Icon, Image, Input, SimpleGrid, Text, useToast } from '@chakra-ui/react'
 
 
 import {TbBed} from 'react-icons/tb'
@@ -8,6 +11,73 @@ import {IoIosMan} from 'react-icons/io'
 import {AiOutlineWifi} from 'react-icons/ai'
 
 const CheckoutPage = () => {
+  // The "Complete Booking" button below previously had no onClick at all —
+  // this whole page was static/hardcoded and did nothing when clicked.
+  const toast = useToast();
+  const navigate = useNavigate();
+  const activeUser = useSelector((store) => store.LoginReducer.activeUser);
+
+  const handleCompleteBooking = async () => {
+    try {
+      const [flightRes, hotelRes] = await Promise.all([
+        axios.get('http://localhost:8080/flightcart'),
+        axios.get('http://localhost:8080/hotelcart'),
+      ]);
+
+      const bookedAt = new Date().toISOString();
+      const bookerName = activeUser?.user_name || 'Guest';
+      const bookerNumber = activeUser?.number || '';
+
+      // Move each cart item into a permanent "bookings" record so it still
+      // shows up for the admin after checkout clears the cart.
+      await Promise.all([
+        ...flightRes.data.map((item) =>
+          axios.post('http://localhost:8080/bookings', {
+            type: 'flight',
+            bookedAt,
+            bookerName,
+            bookerNumber,
+            details: item,
+          })
+        ),
+        ...hotelRes.data.map((item) =>
+          axios.post('http://localhost:8080/bookings', {
+            type: 'hotel',
+            bookedAt,
+            bookerName,
+            bookerNumber,
+            details: item,
+          })
+        ),
+      ]);
+
+      await Promise.all([
+        ...flightRes.data.map((item) =>
+          axios.delete(`http://localhost:8080/flightcart/${item.id}`)
+        ),
+        ...hotelRes.data.map((item) =>
+          axios.delete(`http://localhost:8080/hotelcart/${item.id}`)
+        ),
+      ]);
+      toast({
+        title: 'Booking Complete',
+        description: 'Your trip has been booked successfully.',
+        status: 'success',
+        duration: 5000,
+        isClosable: true,
+      });
+      navigate('/');
+    } catch (err) {
+      console.log(err);
+      toast({
+        title: 'Booking failed',
+        status: 'error',
+        duration: 5000,
+        isClosable: true,
+      });
+    }
+  };
+
   return (
 
       <Box bg={'gray.300'} width={'100%'} height={'1000px'} >
@@ -140,7 +210,7 @@ const CheckoutPage = () => {
                 <Box>Pay at property</Box>
                 <Box>$11,210.00</Box>
               </Box>
-              <Button mt={4} width={'100%'} height='40px' bg={'#FF9800'}rounded={'7px'} >Complete Booking</Button>
+              <Button onClick={handleCompleteBooking} mt={4} width={'100%'} height='40px' bg={'#FF9800'}rounded={'7px'} >Complete Booking</Button>
             </Box>
           </SimpleGrid>
         </Box>

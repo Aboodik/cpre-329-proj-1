@@ -8,17 +8,29 @@ export default function FlightCard({ data }) {
   const toast = useToast();
 
   const handleClick = () => {
-    axios.post(`http://localhost:8000/flightcart`, data);
-    //   .then((res) => console.log(res))
-    //   .catch((err) => console.log(err))
-
-    toast({
-      title: "Flight Add to Cart",
-      description: "Please Proceed to Payment",
-      status: "success",
-      duration: 9000,
-      isClosable: true,
-    });
+    // Was posting to :8000, but json-server runs on :8080 — every "Book
+    // Now" click failed silently (the .then/.catch were commented out, so
+    // a fake success toast fired regardless of whether it actually saved).
+    axios
+      .post(`http://localhost:8080/flightcart`, data)
+      .then(() => {
+        toast({
+          title: "Flight Added to Cart",
+          description: "Please Proceed to Payment",
+          status: "success",
+          duration: 9000,
+          isClosable: true,
+        });
+      })
+      .catch((err) => {
+        console.log(err);
+        toast({
+          title: "Could not add flight to cart",
+          status: "error",
+          duration: 9000,
+          isClosable: true,
+        });
+      });
   };
 
   

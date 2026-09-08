@@ -44,11 +44,15 @@ export const selectCity = (selectedCity) => {
   return { type: SELECTED_CITY, payload: { selectedCity } };
 };
 
+// addHotel, fetchingHotels, and DeleteHotel below all used to hit
+// happy-sunglasses-eel.cyclic.app — cyclic.sh shut down in 2024, so every
+// request here (hotel search, hotel booking, hotel search filters) failed
+// outright. All three now point at the local json-server instead.
 export const addHotel = (payload) => (dispatch) => {
   dispatch(hotelRequest());
 
   axios
-    .post("https://happy-sunglasses-eel.cyclic.app/hotel", payload) 
+    .post("http://localhost:8080/hotel", payload)
     .then(() => {
       dispatch(postHotelSuccess());
     })
@@ -57,16 +61,22 @@ export const addHotel = (payload) => (dispatch) => {
     });
 };
 
-//https://happy-sunglasses-eel.cyclic.app/hotel?_sort=asc&_order=price&page=1&_limit=20
-export const fetchingHotels = (sort, order, page) => async (dispatch) => {
-  console.log(order, sort,page);
+const HOTEL_PAGE_SIZE = 20;
+
+export const fetchingHotels = (sort, order, page = 1) => async (dispatch) => {
   dispatch({ type: HOTEL_REQUEST });
   try {
-    const res = await axios.get(
-      `https://happy-sunglasses-eel.cyclic.app/hotel?_sort=${sort}&_order=${order}&_page=${page}&_limit=20`
-    );
-    console.log(res.data);
-    dispatch({ type: GET_HOTEL_SUCCESS, payload: res.data });
+    // json-server's _sort/_order/_page/_limit combo is unreliable on this
+    // version, so fetch the full list and sort/paginate client-side.
+    const res = await axios.get(`http://localhost:8080/hotel`);
+    let hotels = Array.isArray(res.data) ? res.data : res.data.data || [];
+    if (sort) {
+      hotels = [...hotels].sort((a, b) =>
+        order === "desc" ? b[sort] - a[sort] : a[sort] - b[sort]
+      );
+    }
+    hotels = hotels.slice((page - 1) * HOTEL_PAGE_SIZE, page * HOTEL_PAGE_SIZE);
+    dispatch({ type: GET_HOTEL_SUCCESS, payload: hotels });
   } catch (err) {
     dispatch({ type: HOTEL_FAILURE });
     console.log(err);
@@ -82,7 +92,7 @@ export const fetchingHotels = (sort, order, page) => async (dispatch) => {
 export const DeleteHotel = (deleteId) => async (dispatch) => {
   try {
     const res = await fetch(
-      `https://happy-sunglasses-eel.cyclic.app/hotel/${deleteId}`, 
+      `http://localhost:8080/hotel/${deleteId}`,
       {
         method: "DELETE",
         headers: {

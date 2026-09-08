@@ -13,7 +13,10 @@ import FlightList from "./FlightList";
 import { useState } from "react";
 
 const SideBar = () => {
-  const [priceValue, setPriceValue] = useState(8);
+  // Was defaulted to 8 (the ₹7000-8000 bucket), which filtered out plenty
+  // of real flights (e.g. ₹6999) before you'd touched a single radio
+  // button. No filter selected now means no price filter applied.
+  const [priceValue, setPriceValue] = useState("");
   const [classes, setClasses] = useState("");
   const [page, setPage] = useState(1);
   const [Packaging, setpackaging] = useState("");

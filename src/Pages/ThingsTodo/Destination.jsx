@@ -18,7 +18,9 @@ export const Destination = () => {
   
   
   useEffect(()=>{
-    axios.get(`https://happy-sunglasses-eel.cyclic.app/Things_todo?place=${place}`).then((response) => {
+    // Was pointed at a cyclic.app host that no longer exists (that service
+    // shut down), so holiday-package search always failed.
+    axios.get(`http://localhost:8080/Things_todo?place=${place}`).then((response) => {
         setPlaces(response.data)
      console.log(response.data)
     });

@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import "./login.css";
 import firebase_app from "../01_firebase/config_firebase";
 import {
@@ -9,9 +8,12 @@ import {
 } from "firebase/auth";
 import { useDispatch, useSelector } from "react-redux";
 import { fetch_users, userRigister } from "../Redux/Authantication/auth.action";
-import Navbar from "../Components/Navbar";
 
 const auth = getAuth(firebase_app);
+// Lets Firebase console "Phone numbers for testing" work without a real
+// reCAPTCHA challenge or SMS being sent.
+auth.settings.appVerificationDisabledForTesting = true;
+
 const state = {
   number: "",
   otp: "",
@@ -23,7 +25,6 @@ const state = {
 
 export const Register = () => {
   const [check, setCheck] = useState(state);
-  const navigate = useNavigate();
   const dispatch = useDispatch();
   let exist = false;
   const { number, otp, verify, otpVerify, user_name, password } = check;
@@ -60,51 +61,42 @@ export const Register = () => {
     window.location = "/login";
   };
 
-  // oonCapture
   function onCapture() {
     window.recaptchaVerifier = new RecaptchaVerifier(
       "recaptcha-container",
-      {
-        size: "invisible",
-        callback: (response) => {
-          handleVerifyNumber();
-          // reCAPTCHA solved, allow signInWithPhoneNumber.
-          // ...
-        },
-      },
+      { size: "invisible" },
       auth
     );
   }
 
   //   Verify button
   function handleVerifyNumber() {
-    document.querySelector("#nextButton").innerText = "Please wait...";
-    onCapture();
     const phoneNumber = `+91${number}`;
-    const appVerifier = window.recaptchaVerifier;
     if (number.length === 10) {
       if (exist) {
         document.querySelector("#loginMesageError").innerHTML =
           "User Alredy exist";
         document.querySelector("#loginMesageSuccess").innerHTML = ``;
       } else {
+        onCapture();
+        const appVerifier = window.recaptchaVerifier;
         signInWithPhoneNumber(auth, phoneNumber, appVerifier)
           .then((confirmationResult) => {
-            // SMS sent. Prompt user to type the code from the message, then sign the
-            // user in with confirmationResult.confirm(code).
             window.confirmationResult = confirmationResult;
             setCheck({ ...check, verify: true });
             document.querySelector(
               "#loginMesageSuccess"
             ).innerHTML = `Otp Send To ${number} !`;
             document.querySelector("#loginMesageError").innerHTML = "";
-            document.querySelector("#nextButton").style.display = "none";
-            // ...
           })
           .catch((error) => {
-            // Error; SMS not sent
-            // document.querySelector("#nextButton").innerText = 'Server Error'
-            // ...
+            // This catch used to be empty (just comments) — a failed OTP
+            // send looked like nothing happened at all. Now the real
+            // Firebase error is shown.
+            console.log(error);
+            document.querySelector("#loginMesageSuccess").innerHTML = "";
+            document.querySelector("#loginMesageError").innerHTML =
+              error.message || "Could not send OTP. Please try again.";
           });
       }
       //
@@ -117,11 +109,17 @@ export const Register = () => {
 
   // if the code is verifyed
   function verifyCode() {
+    console.log("verifyCode clicked, otp:", otp, "confirmationResult exists:", !!window.confirmationResult);
+    if (!window.confirmationResult) {
+      document.querySelector("#loginMesageSuccess").innerHTML = ``;
+      document.querySelector("#loginMesageError").innerHTML =
+        "No OTP was sent yet — click Next again first.";
+      return;
+    }
     window.confirmationResult
       .confirm(otp)
-      .then((result) => {
-        // User signed in successfully.
-        const user = result.user;
+      .then(() => {
+        console.log("OTP confirm succeeded");
         setCheck({ ...check, otpVerify: true });
         document.querySelector(
           "#loginMesageSuccess"
@@ -129,13 +127,12 @@ export const Register = () => {
         document.querySelector("#loginMesageError").innerHTML = "";
         document.querySelector("#loginNumber").style.display = "none";
         document.querySelector("#loginOtp").style.display = "none";
-        // ...
       })
       .catch((error) => {
-        // User couldn't sign in (bad verification code?)
+        console.log(error);
         document.querySelector("#loginMesageSuccess").innerHTML = ``;
-        document.querySelector("#loginMesageError").innerHTML = "Invalid OTP";
-        // ...
+        document.querySelector("#loginMesageError").innerHTML =
+          error.message || "Invalid OTP";
       });
   }
 
@@ -147,7 +144,7 @@ export const Register = () => {
 
   useEffect(() => {
     dispatch(fetch_users);
-  }, []);
+  }, [dispatch]);
 
   return (
     <>
@@ -192,7 +189,9 @@ export const Register = () => {
                   value={otp}
                   onChange={(e) => handleChangeMobile(e)}
                 />
-                <button onClick={verifyCode}>Next</button>
+                {/* Was labeled "Next" same as the number-entry step's
+                    button, which read as if nothing was different about it. */}
+                <button onClick={verifyCode}>Verify OTP</button>
               </span>
             </div>
           ) : (
@@ -239,8 +238,8 @@ export const Register = () => {
             <h6>By signing in, I agree to the Expedia <span> Terms and Conditions</span>, <span>Privacy Statement</span> and <span>Expedia Rewards Terms and Conditions</span>.</h6>
           </div>
           <br />
-          <h3 id="loginMesageError"></h3>
-          <h3 id="loginMesageSuccess"></h3>
+          <h3 id="loginMesageError">{" "}</h3>
+          <h3 id="loginMesageSuccess">{" "}</h3>
         </div>
       </div>
     </>
